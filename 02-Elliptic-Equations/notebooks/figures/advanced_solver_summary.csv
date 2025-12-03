@@ -1,0 +1,7 @@
+Solver,Time (s),Iterations,Rel. Error
+Direct,0.0148,1,-
+CG,0.0072,N/A,2.101e-05
+Jacobi,0.1243,3000,1.799e-02
+SOR,28.0214,1789,1.466e-06
+Line-SOR,19.6369,3092,5.433e-08
+ADI,17.5444,1503,2.521e-08
