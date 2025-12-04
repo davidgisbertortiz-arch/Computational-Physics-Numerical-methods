@@ -1,4 +1,4 @@
-# 🔬 Computational Physics: Numerical Methods
+# 🔬 Computational Physics - Numerical Methods
 
 <div align="center">
 
