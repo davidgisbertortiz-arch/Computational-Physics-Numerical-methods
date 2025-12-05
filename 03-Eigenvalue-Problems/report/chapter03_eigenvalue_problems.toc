@@ -1,0 +1,29 @@
+\babel@toc {english}{}\relax 
+\contentsline {section}{\numberline {1}Introduction and Physical Motivation}{2}{section.1}%
+\contentsline {section}{\numberline {2}Fundamental Properties}{2}{section.2}%
+\contentsline {subsection}{\numberline {2.1}Spectrum and Spectral Decomposition}{2}{subsection.2.1}%
+\contentsline {subsection}{\numberline {2.2}Spectral Radius and Condition Number}{3}{subsection.2.2}%
+\contentsline {section}{\numberline {3}Rayleigh Quotient}{3}{section.3}%
+\contentsline {section}{\numberline {4}Power Iteration}{4}{section.4}%
+\contentsline {subsection}{\numberline {4.1}Basic Algorithm}{4}{subsection.4.1}%
+\contentsline {subsection}{\numberline {4.2}Convergence Analysis}{4}{subsection.4.2}%
+\contentsline {section}{\numberline {5}Inverse Iteration}{4}{section.5}%
+\contentsline {subsection}{\numberline {5.1}Core Idea}{4}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Convergence Analysis}{5}{subsection.5.2}%
+\contentsline {section}{\numberline {6}Rayleigh Quotient Iteration}{5}{section.6}%
+\contentsline {section}{\numberline {7}QR Iteration}{6}{section.7}%
+\contentsline {subsection}{\numberline {7.1}QR Factorization}{6}{subsection.7.1}%
+\contentsline {subsection}{\numberline {7.2}Basic QR Algorithm}{6}{subsection.7.2}%
+\contentsline {subsection}{\numberline {7.3}Relation to Power Iteration}{6}{subsection.7.3}%
+\contentsline {section}{\numberline {8}Lanczos Method}{7}{section.8}%
+\contentsline {subsection}{\numberline {8.1}Motivation}{7}{subsection.8.1}%
+\contentsline {subsection}{\numberline {8.2}Krylov Subspace}{7}{subsection.8.2}%
+\contentsline {subsection}{\numberline {8.3}Lanczos Algorithm}{7}{subsection.8.3}%
+\contentsline {subsection}{\numberline {8.4}Ritz Values}{8}{subsection.8.4}%
+\contentsline {subsection}{\numberline {8.5}Loss of Orthogonality}{8}{subsection.8.5}%
+\contentsline {section}{\numberline {9}Computational Complexity}{8}{section.9}%
+\contentsline {section}{\numberline {10}Stability and Conditioning Analysis}{8}{section.10}%
+\contentsline {subsection}{\numberline {10.1}Eigenvalue Sensitivity}{8}{subsection.10.1}%
+\contentsline {subsection}{\numberline {10.2}Eigenvector Sensitivity}{9}{subsection.10.2}%
+\contentsline {section}{\numberline {11}Method Summary}{9}{section.11}%
+\contentsline {section}{\numberline {12}Conclusions}{9}{section.12}%

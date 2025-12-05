@@ -1,0 +1,663 @@
+\documentclass[11pt,a4paper]{article}
+
+% =============================================================================
+% Packages
+% =============================================================================
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage{physics}
+\usepackage{bm}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{cleveref}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+
+\geometry{margin=2.5cm}
+
+% =============================================================================
+% Configuration
+% =============================================================================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue!70!black,
+    citecolor=green!50!black,
+    urlcolor=blue!80!black
+}
+
+% Theorem environments
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{remark}[theorem]{Remark}
+\newtheorem{example}[theorem]{Example}
+
+% Custom commands
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\bigO}{\mathcal{O}}
+\newcommand{\cond}{\mathrm{cond}}
+\newcommand{\spn}{\mathrm{span}}
+\newcommand{\diag}{\mathrm{diag}}
+\newcommand{\spec}{\sigma}
+
+% Headers
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{Chapter 03: Eigenvalues}
+\fancyfoot[C]{\thepage}
+
+\title{
+    \vspace{-1cm}
+    \textbf{Chapter 03: Eigenvalue Problems} \\
+    \large Numerical Methods in Computational Physics
+}
+\author{Computational Physics - Numerical Methods}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\tableofcontents
+\newpage
+
+% =============================================================================
+\section{Introduction and Physical Motivation}
+% =============================================================================
+
+The eigenvalue problem is one of the most fundamental in mathematical and computational physics. It appears naturally in:
+
+\begin{itemize}
+    \item \textbf{Quantum mechanics}: The time-independent Schr\"odinger equation $\hat{H}\psi = E\psi$
+    \item \textbf{Mechanical vibrations}: Normal modes of oscillation
+    \item \textbf{Stability of dynamical systems}: Jacobian analysis
+    \item \textbf{Principal component analysis}: Dimensionality reduction
+    \item \textbf{Differential equations}: Separation of variables in PDEs
+\end{itemize}
+
+\begin{definition}[Eigenvalue Problem]
+Given a matrix $A \in \R^{n \times n}$ (or $\C^{n \times n}$), the \emph{eigenvalue problem} consists of finding scalars $\lambda$ (eigenvalues) and nonzero vectors $\vb{v}$ (eigenvectors) such that:
+\begin{equation}
+    A\vb{v} = \lambda \vb{v}
+    \label{eq:eigenvalue_problem}
+\end{equation}
+\end{definition}
+
+Equivalently, $(\lambda, \vb{v})$ is an eigenpair if and only if $(A - \lambda I)\vb{v} = \vb{0}$, which requires $\det(A - \lambda I) = 0$.
+
+\begin{definition}[Characteristic Polynomial]
+The \emph{characteristic polynomial} of $A$ is:
+\begin{equation}
+    p(\lambda) = \det(A - \lambda I) = (-1)^n \lambda^n + c_{n-1}\lambda^{n-1} + \cdots + c_1\lambda + c_0
+\end{equation}
+where the eigenvalues are the roots of $p(\lambda) = 0$.
+\end{definition}
+
+\begin{remark}
+Although the characteristic polynomial exactly defines the eigenvalues, it is \textbf{never} computed explicitly in numerical practice because:
+\begin{enumerate}
+    \item Computing determinants is $\bigO(n^3)$ and numerically unstable
+    \item Finding roots of high-degree polynomials is an ill-conditioned problem
+    \item The Abel-Ruffini theorem: no closed formula exists for $n \geq 5$
+\end{enumerate}
+\end{remark}
+
+% =============================================================================
+\section{Fundamental Properties}
+% =============================================================================
+
+\subsection{Spectrum and Spectral Decomposition}
+
+\begin{definition}[Spectrum]
+The \emph{spectrum} of $A$, denoted $\spec(A)$, is the set of all its eigenvalues:
+\begin{equation}
+    \spec(A) = \{\lambda \in \C : \det(A - \lambda I) = 0\}
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Spectral Decomposition - Symmetric Matrices]
+\label{thm:spectral_decomposition}
+If $A \in \R^{n \times n}$ is symmetric ($A = A^T$), then:
+\begin{enumerate}
+    \item All eigenvalues are real: $\lambda_i \in \R$
+    \item There exists an orthonormal basis of eigenvectors
+    \item $A$ can be decomposed as:
+    \begin{equation}
+        A = Q \Lambda Q^T = \sum_{i=1}^{n} \lambda_i \vb{q}_i \vb{q}_i^T
+    \end{equation}
+    where $Q = [\vb{q}_1 | \cdots | \vb{q}_n]$ is orthogonal ($Q^T Q = I$) and $\Lambda = \diag(\lambda_1, \ldots, \lambda_n)$
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}[Proof (real eigenvalues)]
+Let $\lambda$ be an eigenvalue with eigenvector $\vb{v} \neq \vb{0}$. Then:
+\begin{align}
+    \vb{v}^* A \vb{v} &= \vb{v}^* (\lambda \vb{v}) = \lambda \|\vb{v}\|^2 \\
+    \vb{v}^* A \vb{v} &= \vb{v}^* A^T \vb{v} = (A\vb{v})^* \vb{v} = (\lambda \vb{v})^* \vb{v} = \bar{\lambda} \|\vb{v}\|^2
+\end{align}
+Therefore $\lambda = \bar{\lambda}$, which implies $\lambda \in \R$.
+\end{proof}
+
+\subsection{Spectral Radius and Condition Number}
+
+\begin{definition}[Spectral Radius]
+The \emph{spectral radius} of $A$ is:
+\begin{equation}
+    \rho(A) = \max_{\lambda \in \spec(A)} |\lambda|
+\end{equation}
+\end{definition}
+
+\begin{definition}[Spectral Condition Number]
+For symmetric positive definite matrices:
+\begin{equation}
+    \kappa(A) = \cond_2(A) = \frac{\lambda_{\max}}{\lambda_{\min}} = \frac{|\lambda_{\max}|}{|\lambda_{\min}|}
+\end{equation}
+\end{definition}
+
+The condition number measures the ``difficulty'' of the eigenvalue problem and affects the convergence of iterative methods.
+
+% =============================================================================
+\section{Rayleigh Quotient}
+% =============================================================================
+
+The Rayleigh quotient is the fundamental tool for approximating eigenvalues.
+
+\begin{definition}[Rayleigh Quotient]
+For symmetric $A$ and $\vb{x} \neq \vb{0}$, the \emph{Rayleigh quotient} is:
+\begin{equation}
+    r(\vb{x}) = \frac{\vb{x}^T A \vb{x}}{\vb{x}^T \vb{x}} = \frac{\langle \vb{x}, A\vb{x} \rangle}{\|\vb{x}\|^2}
+\end{equation}
+\end{definition}
+
+\begin{theorem}[Properties of the Rayleigh Quotient]
+\label{thm:rayleigh_properties}
+Let $A$ be symmetric with eigenvalues $\lambda_1 \leq \lambda_2 \leq \cdots \leq \lambda_n$. Then:
+\begin{enumerate}
+    \item \textbf{Bounds}: $\lambda_1 \leq r(\vb{x}) \leq \lambda_n$ for all $\vb{x} \neq \vb{0}$
+    \item \textbf{Variational characterization}:
+    \begin{align}
+        \lambda_1 &= \min_{\vb{x} \neq \vb{0}} r(\vb{x}) \\
+        \lambda_n &= \max_{\vb{x} \neq \vb{0}} r(\vb{x})
+    \end{align}
+    \item \textbf{Stationary points}: $\nabla r(\vb{x}) = \vb{0}$ if and only if $\vb{x}$ is an eigenvector
+    \item \textbf{Quadratic approximation}: If $\vb{x} = \vb{q}_i + \epsilon \vb{w}$ with $\vb{w} \perp \vb{q}_i$:
+    \begin{equation}
+        r(\vb{x}) = \lambda_i + \bigO(\epsilon^2)
+    \end{equation}
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}[Proof (quadratic approximation)]
+Writing $\vb{x}$ in the eigenvector basis: $\vb{x} = \sum_j c_j \vb{q}_j$ with $c_i \approx 1$ and $|c_j| = \bigO(\epsilon)$ for $j \neq i$:
+\begin{equation}
+    r(\vb{x}) = \frac{\sum_j c_j^2 \lambda_j}{\sum_j c_j^2} = \frac{\lambda_i + \bigO(\epsilon^2)}{1 + \bigO(\epsilon^2)} = \lambda_i + \bigO(\epsilon^2)
+\end{equation}
+\end{proof}
+
+\begin{remark}[Importance of the Quadratic Approximation]
+This property is crucial: the Rayleigh quotient approximates the eigenvalue with $\bigO(\epsilon^2)$ error even though the eigenvector has $\bigO(\epsilon)$ error. This means that \textbf{eigenvalues converge faster than eigenvectors}.
+\end{remark}
+
+% =============================================================================
+\section{Power Iteration}
+% =============================================================================
+
+\subsection{Basic Algorithm}
+
+Power iteration is the simplest algorithm for finding the dominant eigenvalue.
+
+\begin{algorithm}[H]
+\caption{Power Iteration}
+\label{alg:power_iteration}
+\begin{algorithmic}[1]
+\Require Matrix $A$, initial vector $\vb{v}_0$, tolerance $\epsilon$
+\Ensure Dominant eigenvalue $\lambda$, eigenvector $\vb{v}$
+\State $\vb{v} \gets \vb{v}_0 / \|\vb{v}_0\|$
+\For{$k = 1, 2, \ldots$}
+    \State $\vb{w} \gets A\vb{v}$
+    \State $\lambda \gets \vb{v}^T \vb{w}$ \Comment{Rayleigh quotient}
+    \State $\vb{v} \gets \vb{w} / \|\vb{w}\|$
+    \If{convergence reached}
+        \State \Return $\lambda, \vb{v}$
+    \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Convergence Analysis}
+
+\begin{theorem}[Convergence of Power Iteration]
+\label{thm:power_convergence}
+Let $A$ be diagonalizable with eigenvalues $|\lambda_1| > |\lambda_2| \geq \cdots \geq |\lambda_n|$. If $\vb{v}_0$ has a nonzero component in the direction of $\vb{q}_1$, then:
+\begin{equation}
+    \vb{v}_k = \frac{A^k \vb{v}_0}{\|A^k \vb{v}_0\|} \to \pm \vb{q}_1 \quad \text{as } k \to \infty
+\end{equation}
+with convergence rate:
+\begin{equation}
+    \|\vb{v}_k - \pm\vb{q}_1\| = \bigO\left(\left|\frac{\lambda_2}{\lambda_1}\right|^k\right)
+\end{equation}
+\end{theorem}
+
+\begin{proof}
+Expanding $\vb{v}_0$ in the eigenvector basis: $\vb{v}_0 = \sum_{i=1}^n c_i \vb{q}_i$ with $c_1 \neq 0$:
+\begin{align}
+    A^k \vb{v}_0 &= \sum_{i=1}^n c_i \lambda_i^k \vb{q}_i = \lambda_1^k \left[ c_1 \vb{q}_1 + \sum_{i=2}^n c_i \left(\frac{\lambda_i}{\lambda_1}\right)^k \vb{q}_i \right]
+\end{align}
+Since $|\lambda_i/\lambda_1| < 1$ for $i \geq 2$, the terms $(\lambda_i/\lambda_1)^k \to 0$ exponentially.
+\end{proof}
+
+\begin{remark}[Limitations]
+\begin{itemize}
+    \item Slow convergence if $|\lambda_2/\lambda_1| \approx 1$
+    \item Only finds the \emph{dominant} eigenvalue
+    \item Fails if $|\lambda_1| = |\lambda_2|$ (eigenvalues of equal magnitude)
+\end{itemize}
+\end{remark}
+
+% =============================================================================
+\section{Inverse Iteration}
+% =============================================================================
+
+\subsection{Core Idea}
+
+To find the eigenvalue closest to a \emph{shift} $\sigma$, we apply power iteration to $(A - \sigma I)^{-1}$.
+
+\begin{proposition}
+If $\lambda$ is an eigenvalue of $A$ with eigenvector $\vb{v}$, then:
+\begin{equation}
+    (A - \sigma I)^{-1} \vb{v} = \frac{1}{\lambda - \sigma} \vb{v}
+\end{equation}
+That is, $(A - \sigma I)^{-1}$ has eigenvalues $1/(\lambda_i - \sigma)$ with the same eigenvectors.
+\end{proposition}
+
+The eigenvalue of $(A - \sigma I)^{-1}$ with largest magnitude corresponds to the $\lambda_i$ closest to $\sigma$.
+
+\begin{algorithm}[H]
+\caption{Inverse Iteration}
+\label{alg:inverse_iteration}
+\begin{algorithmic}[1]
+\Require Matrix $A$, shift $\sigma$, initial vector $\vb{v}_0$
+\Ensure Eigenvalue $\lambda$ closest to $\sigma$, eigenvector $\vb{v}$
+\State $\vb{v} \gets \vb{v}_0 / \|\vb{v}_0\|$
+\State Factorize $A - \sigma I = LU$ \Comment{Only once}
+\For{$k = 1, 2, \ldots$}
+    \State Solve $(A - \sigma I)\vb{w} = \vb{v}$ \Comment{Using $LU$}
+    \State $\vb{v} \gets \vb{w} / \|\vb{w}\|$
+    \State $\lambda \gets \sigma + 1/(\vb{v}^T \vb{w})$ \Comment{Or use Rayleigh}
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Convergence Analysis}
+
+\begin{theorem}[Convergence of Inverse Iteration]
+Let $\lambda_j$ be the eigenvalue closest to $\sigma$. The convergence is:
+\begin{equation}
+    \text{error}_k = \bigO\left(\left|\frac{\lambda_j - \sigma}{\lambda_i - \sigma}\right|^k\right)
+\end{equation}
+where $\lambda_i$ is the second closest eigenvalue to $\sigma$.
+\end{theorem}
+
+\begin{remark}
+If $\sigma$ is very close to an eigenvalue, convergence is very fast. In the limit $\sigma \to \lambda_j$, convergence occurs in a single iteration (but $(A - \sigma I)$ becomes singular).
+\end{remark}
+
+% =============================================================================
+\section{Rayleigh Quotient Iteration}
+% =============================================================================
+
+Rayleigh quotient iteration combines inverse iteration with an \emph{adaptive} shift.
+
+\begin{algorithm}[H]
+\caption{Rayleigh Quotient Iteration}
+\label{alg:rayleigh_iteration}
+\begin{algorithmic}[1]
+\Require Symmetric matrix $A$, initial vector $\vb{v}_0$, initial shift $\sigma_0$
+\Ensure Eigenpair $(\lambda, \vb{v})$
+\State $\vb{v} \gets \vb{v}_0 / \|\vb{v}_0\|$
+\State $\sigma \gets \sigma_0$
+\For{$k = 1, 2, \ldots$}
+    \State Solve $(A - \sigma I)\vb{w} = \vb{v}$
+    \State $\vb{v} \gets \vb{w} / \|\vb{w}\|$
+    \State $\sigma \gets \vb{v}^T A \vb{v}$ \Comment{Update shift with Rayleigh}
+\EndFor
+\State \Return $\sigma, \vb{v}$
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[Cubic Convergence]
+\label{thm:rayleigh_cubic}
+For symmetric matrices, Rayleigh quotient iteration has \textbf{cubic} convergence:
+\begin{equation}
+    |\sigma_{k+1} - \lambda| = \bigO(|\sigma_k - \lambda|^3)
+\end{equation}
+\end{theorem}
+
+\begin{proof}[Proof sketch]
+Let $\epsilon_k = \sigma_k - \lambda$. By the quadratic approximation of the Rayleigh quotient:
+\begin{equation}
+    \sigma_{k+1} = r(\vb{v}_{k+1}) = \lambda + \bigO(\|\vb{v}_{k+1} - \vb{q}\|^2)
+\end{equation}
+Furthermore, inverse iteration with shift $\sigma_k$ gives:
+\begin{equation}
+    \|\vb{v}_{k+1} - \vb{q}\| = \bigO(|\epsilon_k|) \cdot \|\vb{v}_k - \vb{q}\|
+\end{equation}
+Combining: the error in $\sigma$ is squared twice, yielding cubic convergence.
+\end{proof}
+
+\begin{example}
+With $\epsilon_0 = 10^{-1}$:
+\begin{itemize}
+    \item Iteration 1: $\epsilon_1 \approx 10^{-3}$
+    \item Iteration 2: $\epsilon_2 \approx 10^{-9}$
+    \item Iteration 3: $\epsilon_3 \approx 10^{-27}$ (machine precision)
+\end{itemize}
+Convergence in 2-3 iterations!
+\end{example}
+
+% =============================================================================
+\section{QR Iteration}
+% =============================================================================
+
+\subsection{QR Factorization}
+
+\begin{definition}[QR Factorization]
+Every matrix $A \in \R^{n \times n}$ admits a factorization:
+\begin{equation}
+    A = QR
+\end{equation}
+where $Q$ is orthogonal ($Q^T Q = I$) and $R$ is upper triangular.
+\end{definition}
+
+\subsection{Basic QR Algorithm}
+
+\begin{algorithm}[H]
+\caption{QR Iteration (basic)}
+\label{alg:qr_iteration}
+\begin{algorithmic}[1]
+\Require Matrix $A_0 = A$
+\Ensure Diagonal/triangular matrix with eigenvalues on the diagonal
+\For{$k = 0, 1, 2, \ldots$}
+    \State $A_k = Q_k R_k$ \Comment{QR factorization}
+    \State $A_{k+1} = R_k Q_k$ \Comment{Multiply in reverse order}
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\begin{theorem}[Similarity Property]
+All matrices $A_k$ are similar:
+\begin{equation}
+    A_{k+1} = R_k Q_k = Q_k^T (Q_k R_k) Q_k = Q_k^T A_k Q_k
+\end{equation}
+Therefore, they share the same eigenvalues.
+\end{theorem}
+
+\begin{theorem}[Convergence of the QR Algorithm]
+\label{thm:qr_convergence}
+For matrices with eigenvalues of distinct magnitudes $|\lambda_1| > |\lambda_2| > \cdots > |\lambda_n|$:
+\begin{equation}
+    A_k \to \begin{pmatrix}
+        \lambda_1 & * & \cdots & * \\
+        0 & \lambda_2 & \cdots & * \\
+        \vdots & \ddots & \ddots & \vdots \\
+        0 & \cdots & 0 & \lambda_n
+    \end{pmatrix}
+\end{equation}
+with elements $(i,j)$ for $i > j$ decaying as $\bigO(|\lambda_i/\lambda_j|^k)$.
+\end{theorem}
+
+\subsection{Relation to Power Iteration}
+
+\begin{proposition}
+The QR algorithm can be viewed as \emph{simultaneous} power iteration over all eigenvectors:
+\begin{equation}
+    \tilde{Q}_k = Q_0 Q_1 \cdots Q_{k-1}
+\end{equation}
+converges to the eigenvector matrix, and
+\begin{equation}
+    A^k = \tilde{Q}_k \tilde{R}_k
+\end{equation}
+where $\tilde{R}_k = R_{k-1} R_{k-2} \cdots R_0$.
+\end{proposition}
+
+% =============================================================================
+\section{Lanczos Method}
+% =============================================================================
+
+\subsection{Motivation}
+
+For large sparse matrices ($n \gg 1000$), the previous methods are impractical:
+\begin{itemize}
+    \item QR iteration: $\bigO(n^3)$ per iteration
+    \item Full storage: $\bigO(n^2)$
+\end{itemize}
+
+The Lanczos method is optimal for \textbf{symmetric sparse} matrices, with:
+\begin{itemize}
+    \item Complexity $\bigO(kn)$ for $k$ eigenvalues
+    \item Only requires matrix-vector products
+\end{itemize}
+
+\subsection{Krylov Subspace}
+
+\begin{definition}[Krylov Subspace]
+Given $A$ and an initial vector $\vb{v}$, the \emph{Krylov subspace} of order $k$ is:
+\begin{equation}
+    \mathcal{K}_k(A, \vb{v}) = \spn\{\vb{v}, A\vb{v}, A^2\vb{v}, \ldots, A^{k-1}\vb{v}\}
+\end{equation}
+\end{definition}
+
+\begin{remark}
+Power iteration works in $\mathcal{K}_k$ but only extracts information from the vector $A^{k-1}\vb{v}$. Lanczos leverages \emph{all} the information in the subspace.
+\end{remark}
+
+\subsection{Lanczos Algorithm}
+
+The algorithm constructs an orthonormal basis $\{\vb{q}_1, \ldots, \vb{q}_k\}$ of $\mathcal{K}_k$ such that:
+\begin{equation}
+    Q_k^T A Q_k = T_k
+\end{equation}
+where $T_k$ is \textbf{symmetric tridiagonal}:
+\begin{equation}
+    T_k = \begin{pmatrix}
+        \alpha_1 & \beta_1 & & \\
+        \beta_1 & \alpha_2 & \beta_2 & \\
+        & \ddots & \ddots & \ddots \\
+        & & \beta_{k-1} & \alpha_k
+    \end{pmatrix}
+\end{equation}
+
+\begin{algorithm}[H]
+\caption{Lanczos Iteration}
+\label{alg:lanczos}
+\begin{algorithmic}[1]
+\Require Symmetric matrix $A$, initial vector $\vb{q}_1$ with $\|\vb{q}_1\| = 1$
+\Ensure Coefficients $\alpha_j, \beta_j$ of the tridiagonal matrix $T$
+\State $\beta_0 \gets 0$, $\vb{q}_0 \gets \vb{0}$
+\For{$j = 1, 2, \ldots, k$}
+    \State $\vb{w} \gets A\vb{q}_j$
+    \State $\alpha_j \gets \vb{q}_j^T \vb{w}$
+    \State $\vb{w} \gets \vb{w} - \alpha_j \vb{q}_j - \beta_{j-1} \vb{q}_{j-1}$
+    \State $\beta_j \gets \|\vb{w}\|$
+    \If{$\beta_j < \epsilon$}
+        \State \textbf{break} \Comment{Invariant subspace found}
+    \EndIf
+    \State $\vb{q}_{j+1} \gets \vb{w} / \beta_j$
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Ritz Values}
+
+\begin{definition}[Ritz Values and Vectors]
+The eigenvalues of $T_k$ are called \emph{Ritz values} and approximate the eigenvalues of $A$. If $T_k \vb{s} = \theta \vb{s}$, then $\vb{y} = Q_k \vb{s}$ is the corresponding \emph{Ritz vector}.
+\end{definition}
+
+\begin{theorem}[Lanczos Convergence]
+The extreme Ritz values (largest and smallest) converge exponentially fast toward the extreme eigenvalues of $A$. For matrices with well-separated eigenvalues, convergence is:
+\begin{equation}
+    |\theta_1^{(k)} - \lambda_1| = \bigO\left(\left(\frac{\lambda_2 - \lambda_n}{\lambda_1 - \lambda_n}\right)^{2k}\right)
+\end{equation}
+\end{theorem}
+
+\subsection{Loss of Orthogonality}
+
+\begin{remark}[Numerical Issue]
+In finite arithmetic, Lanczos vectors gradually lose orthogonality due to rounding errors. This causes:
+\begin{itemize}
+    \item Appearance of ``ghost'' eigenvalues (spurious duplicates)
+    \item Delayed convergence
+\end{itemize}
+\textbf{Solution}: Reorthogonalization (partial or complete).
+\end{remark}
+
+% =============================================================================
+\section{Computational Complexity}
+% =============================================================================
+
+\begin{table}[H]
+\centering
+\caption{Computational complexity comparison}
+\label{tab:complexity}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Method} & \textbf{Cost/iter} & \textbf{Storage} & \textbf{Eigenvalues} \\
+\midrule
+Power Iteration & $\bigO(n^2)$ & $\bigO(n)$ & 1 (dominant) \\
+Inverse Iteration & $\bigO(n^3) + \bigO(n^2)$ & $\bigO(n^2)$ & 1 (closest to $\sigma$) \\
+Rayleigh Quotient & $\bigO(n^3)$ & $\bigO(n^2)$ & 1 (any) \\
+QR Iteration & $\bigO(n^3)$ & $\bigO(n^2)$ & All \\
+Lanczos & $\bigO(mn)$ & $\bigO(kn)$ & $k$ extreme \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Where $m$ is the number of nonzero elements of $A$ (for sparse matrices).
+
+% =============================================================================
+\section{Stability and Conditioning Analysis}
+% =============================================================================
+
+\subsection{Eigenvalue Sensitivity}
+
+\begin{theorem}[Bauer-Fike Theorem]
+Let $A$ be diagonalizable with $A = X \Lambda X^{-1}$. If $\mu$ is an eigenvalue of $A + E$, then:
+\begin{equation}
+    \min_{\lambda \in \spec(A)} |\mu - \lambda| \leq \kappa(X) \|E\|
+\end{equation}
+where $\kappa(X) = \|X\| \|X^{-1}\|$.
+\end{theorem}
+
+\begin{corollary}[Normal Matrices]
+For normal matrices ($AA^* = A^*A$, including symmetric), $\kappa(X) = 1$, and eigenvalues are perfectly conditioned:
+\begin{equation}
+    |\mu - \lambda| \leq \|E\|
+\end{equation}
+\end{corollary}
+
+\subsection{Eigenvector Sensitivity}
+
+Eigenvectors are more sensitive than eigenvalues:
+
+\begin{theorem}
+For simple eigenvalues of symmetric matrices, if $\tilde{\vb{v}}$ is the perturbed eigenvector:
+\begin{equation}
+    \sin \angle(\vb{v}, \tilde{\vb{v}}) \leq \frac{\|E\|}{\min_{j \neq i} |\lambda_i - \lambda_j|}
+\end{equation}
+\end{theorem}
+
+\begin{remark}
+Eigenvectors corresponding to nearby eigenvalues (``clusters'') are inherently ill-conditioned.
+\end{remark}
+
+% =============================================================================
+\section{Method Summary}
+% =============================================================================
+
+\begin{table}[H]
+\centering
+\caption{Method selection guide}
+\label{tab:method_selection}
+\begin{tabular}{p{4cm}p{8cm}}
+\toprule
+\textbf{Situation} & \textbf{Recommended Method} \\
+\midrule
+Dominant eigenvalue & Power Iteration \\
+Specific eigenvalue & Inverse Iteration with shift \\
+Maximum precision, one eigenvalue & Rayleigh Quotient Iteration \\
+All eigenvalues, small $n$ & QR Iteration (or NumPy/SciPy) \\
+Large sparse matrices & Lanczos (SA/LA) \\
+Large non-symmetric matrices & Arnoldi (not covered here) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =============================================================================
+\section{Conclusions}
+% =============================================================================
+
+Iterative methods for eigenvalue problems are based on fundamental ideas:
+
+\begin{enumerate}
+    \item \textbf{Rayleigh Quotient}: Approximates eigenvalues with quadratic error
+    \item \textbf{Power Iteration}: Linear convergence toward the dominant eigenvalue
+    \item \textbf{Shift-and-Invert}: Transforms the problem to converge to any eigenvalue
+    \item \textbf{Krylov Subspaces}: Exploit structure for sparse matrices
+\end{enumerate}
+
+Method selection depends on:
+\begin{itemize}
+    \item Matrix size ($n$)
+    \item Structure (dense vs sparse)
+    \item Number of eigenvalues required
+    \item Special properties (symmetry, positive definiteness)
+\end{itemize}
+
+% =============================================================================
+% References
+% =============================================================================
+\begin{thebibliography}{99}
+
+\bibitem{trefethen1997}
+Trefethen, L.N. and Bau, D.
+\textit{Numerical Linear Algebra}.
+SIAM, 1997.
+
+\bibitem{golub2013}
+Golub, G.H. and Van Loan, C.F.
+\textit{Matrix Computations}, 4th ed.
+Johns Hopkins University Press, 2013.
+
+\bibitem{saad2011}
+Saad, Y.
+\textit{Numerical Methods for Large Eigenvalue Problems}, 2nd ed.
+SIAM, 2011.
+
+\bibitem{parlett1998}
+Parlett, B.N.
+\textit{The Symmetric Eigenvalue Problem}.
+SIAM Classics in Applied Mathematics, 1998.
+
+\bibitem{watkins2007}
+Watkins, D.S.
+\textit{The Matrix Eigenvalue Problem: GR and Krylov Subspace Methods}.
+SIAM, 2007.
+
+\end{thebibliography}
+
+\end{document}
